@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora & Combinadora de Resistores - MVP</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                            dark: '#0f172a',
+                            card: '#1e293b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Estilos personalizados y utilidades de scrollbar */
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Animación suave */
+        .transition-all-200 {
+            transition: all 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-emerald-500 to-teal-400 p-2.5 rounded-xl shadow-lg shadow-emerald-500/20 text-slate-950 font-bold text-xl">
+                    <i class="fa-solid fa-microchip"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-200 bg-clip-text text-transparent">
+                        ResistorCraft Lab
+                    </h1>
+                    <p class="text-xs text-slate-400">Calculadora de Resistores & Combinador E12/E24</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> MVP v1.0
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Panel de Configuración e Entradas (4 columnas en escritorio) -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
+
+                    <h2 class="text-lg font-semibold text-slate-100 mb-5 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-emerald-400"></i> Parámetros de Entrada
+                    </h2>
+
+                    <form id="calculatorForm" class="space-y-5" onsubmit="return false;">
+                        
+                        <!-- Valor Deseado de Resistencia -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-2">
+                                Resistencia Buscada
+                            </label>
+                            <div class="flex gap-2">
+                                <div class="relative flex-1">
+                                    <input 
+                                        type="number" 
+                                        id="targetValue" 
+                                        step="any"
+                                        min="0.1" 
+                                        value="1" 
+                                        required
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-4 py-2.5 text-slate-100 font-mono text-lg font-medium outline-none transition"
+                                        placeholder="ej. 1000"
+                                    />
+                                </div>
+                                <select 
+                                    id="targetUnit"
+                                    class="bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-slate-200 font-medium text-sm outline-none transition cursor-pointer"
+                                >
+                                    <option value="1">Ω</option>
+                                    <option value="1000" selected>kΩ</option>
+                                    <option value="1000000">MΩ</option>
+                                </select>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">Soporta decimales y multiplicadores de unidad.</p>
+                        </div>
+
+                        <!-- Selección de Tolerancia -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-2">
+                                Tolerancia & Serie Comercial
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="relative flex flex-col p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-slate-600 transition group has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-950/20">
+                                    <input type="radio" name="tolerance" value="5" checked class="sr-only" />
+                                    <span class="text-sm font-semibold text-slate-200 group-has-[:checked]:text-emerald-400">± 5% (E24)</span>
+                                    <span class="text-xs text-slate-400 mt-0.5">Estándar comercial</span>
+                                </label>
+                                <label class="relative flex flex-col p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-slate-600 transition group has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-950/20">
+                                    <input type="radio" name="tolerance" value="10" class="sr-only" />
+                                    <span class="text-sm font-semibold text-slate-200 group-has-[:checked]:text-emerald-400">± 10% (E12)</span>
+                                    <span class="text-xs text-slate-400 mt-0.5">Uso general</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Número de Resistores -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-2">
+                                Cantidad Máxima de Resistores
+                            </label>
+                            <div class="grid grid-cols-3 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+                                <label class="cursor-pointer text-center">
+                                    <input type="radio" name="resistorCount" value="1" checked class="sr-only peer">
+                                    <div class="py-2 text-xs font-semibold rounded-lg text-slate-400 peer-checked:bg-emerald-500 peer-checked:text-slate-950 transition">
+                                        1 Resistor
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer text-center">
+                                    <input type="radio" name="resistorCount" value="2" class="sr-only peer">
+                                    <div class="py-2 text-xs font-semibold rounded-lg text-slate-400 peer-checked:bg-emerald-500 peer-checked:text-slate-950 transition">
+                                        Hasta 2
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer text-center">
+                                    <input type="radio" name="resistorCount" value="3" class="sr-only peer">
+                                    <div class="py-2 text-xs font-semibold rounded-lg text-slate-400 peer-checked:bg-emerald-500 peer-checked:text-slate-950 transition">
+                                        Hasta 3
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button 
+                            type="button" 
+                            id="calculateBtn"
+                            class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/25 transition active:scale-[0.98] flex items-center justify-center gap-2"
+                        >
+                            <i class="fa-solid fa-calculator"></i>
+                            Encontrar Combinaciones
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Tarjeta Info Rápida / Atajos -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 text-xs text-slate-400 space-y-2">
+                    <div class="flex items-center gap-2 text-slate-300 font-semibold mb-1">
+                        <i class="fa-solid fa-circle-info text-emerald-400"></i> ¿Cómo funciona?
+                    </div>
+                    <p><strong class="text-slate-300">Valores Comerciales Estrictos:</strong> Todos los componentes utilizados pertenecen a las series estándar **E12 (±10%)** o **E24 (±5%)**.</p>
+                    <p><strong class="text-slate-300">Aproximación para 1 Resistor:</strong> Encuentra los valores comerciales estándar más cercanos por encima y por debajo del valor deseado (ej. 120Ω o 150Ω para 130Ω).</p>
+                    <p><strong class="text-slate-300">Modos 2 y 3:</strong> Combina únicamente piezas de valor comercial en arreglos Serie, Paralelo y Mixtos para acercarse al objetivo.</p>
+                </div>
+            </div>
+
+            <!-- Panel Principal de Resultados (8 columnas en escritorio) -->
+            <div class="lg:col-span-8 space-y-6">
+
+                <!-- Resumen / Mejor Resultado Encontrado -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 mb-6 gap-3">
+                        <div>
+                            <span class="text-xs uppercase tracking-wider text-emerald-400 font-bold">Mejor Ajuste Encontrado</span>
+                            <h2 class="text-2xl font-black text-slate-100 flex items-center gap-2" id="bestFitResult">
+                                -- Ω
+                            </h2>
+                        </div>
+                        <div class="flex items-center gap-3 bg-slate-950 px-4 py-2 rounded-xl border border-slate-800">
+                            <div class="text-right">
+                                <span class="text-[10px] uppercase tracking-wider text-slate-400 block">Error Porcentual</span>
+                                <span class="font-mono text-base font-bold text-slate-200" id="bestFitError">0.00%</span>
+                            </div>
+                            <div id="errorBadge" class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                        </div>
+                    </div>
+
+                    <!-- Representación Visual del Resistor Principal / Esquemático -->
+                    <div class="bg-slate-950 border border-slate-800/80 rounded-xl p-6 flex flex-col items-center justify-center relative min-h-[160px] overflow-hidden">
+                        <span class="absolute top-3 left-3 text-[11px] font-mono text-slate-500">GRÁFICO INTERACTIVO / CÓDIGO BANDERAS</span>
+                        
+                        <!-- SVG Resistor Dinámico -->
+                        <div id="resistorGraphicContainer" class="w-full max-w-md my-2 flex justify-center items-center">
+                            <!-- Inyectado vía JS -->
+                        </div>
+
+                        <div id="resistorDetailsBreakdown" class="mt-4 flex flex-wrap justify-center gap-2 text-xs font-mono">
+                            <!-- Inyectado vía JS (Detalles de bandas) -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla / Grid de Opciones Sugeridas (Para 2 o 3 resistores o alternativas) -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                                <i class="fa-solid fa-list-ol text-emerald-400"></i> Tabla de Arreglos Óptimos
+                            </h3>
+                            <p class="text-xs text-slate-400">Ordenados por el menor margen de error con la meta seleccionada.</p>
+                        </div>
+                        <span id="resultsCount" class="text-xs font-mono bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">
+                            0 Opciones
+                        </span>
+                    </div>
+
+                    <!-- Contenedor de la lista/tabla -->
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-sm text-slate-300 border-collapse">
+                            <thead class="text-xs uppercase bg-slate-950/60 text-slate-400 font-semibold border-b border-slate-800">
+                                <tr>
+                                    <th scope="col" class="py-3 px-4">Configuración</th>
+                                    <th scope="col" class="py-3 px-4">Valores de Componentes</th>
+                                    <th scope="col" class="py-3 px-4"> $R_{equiv}$ Exacto</th>
+                                    <th scope="col" class="py-3 px-4 text-right">Error %</th>
+                                    <th scope="col" class="py-3 px-4 text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="combinationsTableBody" class="divide-y divide-slate-800/60">
+                                <!-- Filas generadas dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950 py-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4">
+            ResistorCraft MVP &copy; 2026 - Herramienta interactiva para diseño en Electrónica
+        </div>
+    </footer>
+
+    <!-- Toast Notification Copiar -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-emerald-500 text-slate-950 px-4 py-2.5 rounded-xl font-medium shadow-2xl transition transform translate-y-20 opacity-0 flex items-center gap-2 z-50">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toastMessage">¡Copiado al portapapeles!</span>
+    </div>
+
+    <!-- LOGIC / JAVASCRIPT -->
+    <script>
+        // ==========================================
+        // 1. CONSTANTES & DATOS DE SERIES COMERCIALES
+        // ==========================================
+
+        // Base de la serie E12 (10% tolerancia)
+        const E12_BASE = [1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2];
+
+        // Base de la serie E24 (5% tolerancia)
+        const E24_BASE = [
+            1.0, 1.1, 1.2, 1.3, 1.5, 1.6, 1.8, 2.0, 2.2, 2.4, 2.7, 3.0,
+            3.3, 3.6, 3.9, 4.3, 4.7, 5.1, 5.6, 6.2, 6.8, 7.5, 8.2, 9.1
+        ];
+
+        // Multiplicadores típicos para generar catálogo comercial (1Ω hasta 10MΩ)
+        const MULTIPLIERS = [1, 10, 100, 1000, 10000, 100000, 1000000];
+
+        // Mapeo de Colores de Código de Resistores (4 bandas)
+        const COLOR_MAP = {
+            black: { name: 'Negro', hex: '#000000', text: 'text-white', val: 0, mult: 1 },
+            brown: { name: 'Marrón', hex: '#8B4513', text: 'text-white', val: 1, mult: 10, tol: 1 },
+            red: { name: 'Rojo', hex: '#EF4444', text: 'text-white', val: 2, mult: 100, tol: 2 },
+            orange: { name: 'Naranja', hex: '#F97316', text: 'text-slate-950', val: 3, mult: 1000 },
+            yellow: { name: 'Amarillo', hex: '#EAB308', text: 'text-slate-950', val: 4, mult: 10000 },
+            green: { name: 'Verde', hex: '#22C55E', text: 'text-slate-950', val: 5, mult: 100000, tol: 0.5 },
+            blue: { name: 'Azul', hex: '#3B82F6', text: 'text-white', val: 6, mult: 1000000, tol: 0.25 },
+            violet: { name: 'Violeta', hex: '#A855F7', text: 'text-white', val: 7, mult: 10000000, tol: 0.1 },
+            grey: { name: 'Gris', hex: '#6B7280', text: 'text-white', val: 8, mult: 0.1 },
+            white: { name: 'Blanco', hex: '#FFFFFF', text: 'text-slate-950', val: 9, mult: 0.01 },
+            gold: { name: 'Dorado', hex: '#D97706', text: 'text-slate-950', mult: 0.1, tol: 5 },
+            silver: { name: 'Plateado', hex: '#9CA3AF', text: 'text-slate-950', mult: 0.01, tol: 10 }
+        };
+
+        const BAND_COLORS_DIGITS = [
+            COLOR_MAP.black, COLOR_MAP.brown, COLOR_MAP.red, COLOR_MAP.orange,
+            COLOR_MAP.yellow, COLOR_MAP.green, COLOR_MAP.blue, COLOR_MAP.violet,
+            COLOR_MAP.grey, COLOR_MAP.white
+        ];
+
+        // Global State
+        let currentCalculatedCombinations = [];
+
+        // ==========================================
+        // 2. FUNCIONES AUXILIARES & CÁLCULOS
+        // ==========================================
+
+        // Genera catálogo completo de resistores comerciales estrictos
+        function generateCommercialValues(seriesBase) {
+            let list = [];
+            MULTIPLIERS.forEach(m => {
+                seriesBase.forEach(b => {
+                    let val = Number((b * m).toFixed(2));
+                    if (val >= 1 && val <= 10000000) { // 1 ohm a 10 Mohms
+                        list.push(val);
+                    }
+                });
+            });
+            return Array.from(new Set(list)).sort((a, b) => a - b);
+        }
+
+        // Formatea el valor de Ohmios a texto legible (Ω, kΩ, MΩ)
+        function formatOhms(value) {
+            if (value >= 1000000) {
+                return (value / 1000000).toFixed(value % 1000000 === 0 ? 0 : 2) + ' MΩ';
+            } else if (value >= 1000) {
+                return (value / 1000).toFixed(value % 1000 === 0 ? 0 : 2) + ' kΩ';
+            } else {
+                return value.toFixed(value % 1 === 0 ? 0 : 2) + ' Ω';
+            }
+        }
+
+        // Calcula error porcentual
+        function calculateError(actual, target) {
+            return Math.abs((actual - target) / target) * 100;
+        }
+
+        // Obtiene las bandas de color para un resistor comercial (4 bandas)
+        function getResistorColorBands(value, tolerancePercent) {
+            let exp = Math.floor(Math.log10(value));
+            let sig = Math.round(value / Math.pow(10, exp - 1)); 
+            
+            if (sig >= 100) {
+                sig = Math.round(sig / 10);
+                exp += 1;
+            }
+
+            let d1 = Math.floor(sig / 10);
+            let d2 = sig % 10;
+            let multExp = exp - 1;
+
+            let b1 = BAND_COLORS_DIGITS[d1] || COLOR_MAP.black;
+            let b2 = BAND_COLORS_DIGITS[d2] || COLOR_MAP.black;
+
+            let bMult;
+            if (multExp === -2) bMult = COLOR_MAP.silver;
+            else if (multExp === -1) bMult = COLOR_MAP.grey;
+            else if (multExp >= 0 && multExp <= 9) bMult = BAND_COLORS_DIGITS[multExp];
+            else bMult = COLOR_MAP.black;
+
+            let bTol = (tolerancePercent === 10) ? COLOR_MAP.silver : COLOR_MAP.gold;
+
+            return { band1: b1, band2: b2, multiplier: bMult, tolerance: bTol, valueFormatted: formatOhms(value) };
+        }
+
+        // ==========================================
+        // 3. MOTOR DE COMBINACIONES COMERCIALES
+        // ==========================================
+
+        function computeCombinations(targetR, tolerance, maxResistors) {
+            const seriesBase = (tolerance === 10) ? E12_BASE : E24_BASE;
+            const commercialValues = generateCommercialValues(seriesBase);
+
+            let results = [];
+
+            // --- MODO 1 RESISTOR (Aproximaciones Comerciales Directas) ---
+            // Buscar los 2 o 3 resistores comerciales más cercanos
+            let lowerMatch = commercialValues[0];
+            let upperMatch = commercialValues[commercialValues.length - 1];
+
+            for (let i = 0; i < commercialValues.length; i++) {
+                if (commercialValues[i] <= targetR) {
+                    lowerMatch = commercialValues[i];
+                }
+                if (commercialValues[i] >= targetR) {
+                    upperMatch = commercialValues[i];
+                    break;
+                }
+            }
+
+            // Agregar resistor comercial inferior
+            results.push({
+                type: 'Comercial Único',
+                resistors: [lowerMatch],
+                rTotal: lowerMatch,
+                error: calculateError(lowerMatch, targetR),
+                diffOhms: lowerMatch - targetR
+            });
+
+            // Si el superior es distinto, agregarlo también
+            if (upperMatch !== lowerMatch) {
+                results.push({
+                    type: 'Comercial Único',
+                    resistors: [upperMatch],
+                    rTotal: upperMatch,
+                    error: calculateError(upperMatch, targetR),
+                    diffOhms: upperMatch - targetR
+                });
+            }
+
+            // --- MODO 2 RESISTORES (Exclusivamente componentes de la serie comercial) ---
+            if (maxResistors >= 2) {
+                const fullList = commercialValues;
+
+                // 2 en Serie: R_eq = R1 + R2
+                for (let i = 0; i < fullList.length; i++) {
+                    let r1 = fullList[i];
+                    if (r1 >= targetR * 1.5) break;
+
+                    for (let j = i; j < fullList.length; j++) {
+                        let r2 = fullList[j];
+                        let rTotal = r1 + r2;
+                        if (rTotal > targetR * 2) break;
+
+                        let err = calculateError(rTotal, targetR);
+                        if (err < 20) {
+                            results.push({
+                                type: 'Serie (2)',
+                                resistors: [r1, r2],
+                                rTotal: rTotal,
+                                error: err,
+                                diffOhms: rTotal - targetR
+                            });
+                        }
+                    }
+                }
+
+                // 2 en Paralelo: R_eq = (R1 * R2) / (R1 + R2)
+                for (let i = 0; i < fullList.length; i++) {
+                    let r1 = fullList[i];
+                    if (r1 <= targetR) continue;
+
+                    for (let j = i; j < fullList.length; j++) {
+                        let r2 = fullList[j];
+                        if (r2 <= targetR) continue;
+
+                        let rTotal = (r1 * r2) / (r1 + r2);
+                        let err = calculateError(rTotal, targetR);
+
+                        if (err < 20) {
+                            results.push({
+                                type: 'Paralelo (2)',
+                                resistors: [r1, r2],
+                                rTotal: rTotal,
+                                error: err,
+                                diffOhms: rTotal - targetR
+                            });
+                        }
+                    }
+                }
+            }
+
+            // --- MODO 3 RESISTORES (Exclusivamente componentes comerciales) ---
+            if (maxResistors >= 3) {
+                const sampled3 = commercialValues.filter(v => v <= targetR * 3 && v >= targetR * 0.05);
+
+                // 3 en Serie: R1 + R2 + R3
+                for (let i = 0; i < sampled3.length; i++) {
+                    let r1 = sampled3[i];
+                    if (r1 >= targetR) break;
+                    for (let j = i; j < sampled3.length; j++) {
+                        let r2 = sampled3[j];
+                        if (r1 + r2 >= targetR) break;
+                        for (let k = j; k < sampled3.length; k++) {
+                            let r3 = sampled3[k];
+                            let rTotal = r1 + r2 + r3;
+                            let err = calculateError(rTotal, targetR);
+
+                            if (err < 10) {
+                                results.push({
+                                    type: 'Serie (3)',
+                                    resistors: [r1, r2, r3],
+                                    rTotal: rTotal,
+                                    error: err,
+                                    diffOhms: rTotal - targetR
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // 3 en Paralelo: 1 / (1/R1 + 1/R2 + 1/R3)
+                for (let i = 0; i < sampled3.length; i++) {
+                    let r1 = sampled3[i];
+                    if (r1 <= targetR) continue;
+                    for (let j = i; j < sampled3.length; j++) {
+                        let r2 = sampled3[j];
+                        if (r2 <= targetR) continue;
+                        for (let k = j; k < sampled3.length; k++) {
+                            let r3 = sampled3[k];
+                            if (r3 <= targetR) continue;
+
+                            let rTotal = 1 / ((1 / r1) + (1 / r2) + (1 / r3));
+                            let err = calculateError(rTotal, targetR);
+
+                            if (err < 10) {
+                                results.push({
+                                    type: 'Paralelo (3)',
+                                    resistors: [r1, r2, r3],
+                                    rTotal: rTotal,
+                                    error: err,
+                                    diffOhms: rTotal - targetR
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // Mixto: (R1 || R2) + R3
+                for (let i = 0; i < sampled3.length; i++) {
+                    let r1 = sampled3[i];
+                    for (let j = i; j < sampled3.length; j++) {
+                        let r2 = sampled3[j];
+                        let rPar = (r1 * r2) / (r1 + r2);
+                        if (rPar >= targetR) continue;
+
+                        for (let k = 0; k < sampled3.length; k++) {
+                            let r3 = sampled3[k];
+                            let rTotal = rPar + r3;
+                            let err = calculateError(rTotal, targetR);
+
+                            if (err < 8) {
+                                results.push({
+                                    type: 'Mixto (R1||R2)+R3',
+                                    resistors: [r1, r2, r3],
+                                    rTotal: rTotal,
+                                    error: err,
+                                    diffOhms: rTotal - targetR
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Ordenar por menor error porcentual
+            results.sort((a, b) => a.error - b.error);
+
+            // Filtrar duplicados en combinaciones idénticas
+            const uniqueResults = [];
+            const mapKeys = new Set();
+
+            results.forEach(item => {
+                let sortedRes = [...item.resistors].sort((a,b)=>a-b).join('-');
+                let key = `${item.type}_${sortedRes}_${item.rTotal.toFixed(2)}`;
+                if (!mapKeys.has(key)) {
+                    mapKeys.add(key);
+                    uniqueResults.push(item);
+                }
+            });
+
+            return uniqueResults.slice(0, 20); // Retornar los mejores 20 resultados
+        }
+
+        // ==========================================
+        // 4. RENDERIZADO VISUAL Y UI
+        // ==========================================
+
+        function renderResistorSVG(bands) {
+            return `
+                <svg viewBox="0 0 300 80" class="w-full h-auto max-h-24 drop-shadow-md">
+                    <!-- Patas metálicas -->
+                    <line x1="0" y1="40" x2="60" y2="40" stroke="#94a3b8" stroke-width="6" stroke-linecap="round" />
+                    <line x1="240" y1="40" x2="300" y2="40" stroke="#94a3b8" stroke-width="6" stroke-linecap="round" />
+
+                    <!-- Cuerpo principal del resistor -->
+                    <path d="M 60 20 Q 60 10 75 10 L 225 10 Q 240 10 240 20 L 240 60 Q 240 70 225 70 L 75 70 Q 60 70 60 60 Z" fill="#d1d5db" stroke="#6b7280" stroke-width="2" />
+                    
+                    <!-- Bultos extremos -->
+                    <path d="M 60 15 Q 60 10 70 10 L 80 10 L 80 70 L 70 70 Q 60 70 60 65 Z" fill="#cbd5e1" />
+                    <path d="M 240 15 Q 240 10 230 10 L 220 10 L 220 70 L 230 70 Q 240 70 240 65 Z" fill="#cbd5e1" />
+
+                    <!-- Banda 1 -->
+                    <rect x="90" y="10" width="12" height="60" fill="${bands.band1.hex}" rx="1" />
+                    <!-- Banda 2 -->
+                    <rect x="120" y="10" width="12" height="60" fill="${bands.band2.hex}" rx="1" />
+                    <!-- Banda 3 -->
+                    <rect x="150" y="10" width="12" height="60" fill="${bands.multiplier.hex}" rx="1" />
+                    <!-- Banda 4 -->
+                    <rect x="195" y="10" width="12" height="60" fill="${bands.tolerance.hex}" rx="1" />
+                </svg>
+            `;
+        }
+
+        function renderMiniBands(resistorValue, tolerancePercent) {
+            const bands = getResistorColorBands(resistorValue, tolerancePercent);
+            return `
+                <div class="inline-flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-md border border-slate-800">
+                    <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${bands.band1.hex}"></span>
+                    <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${bands.band2.hex}"></span>
+                    <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${bands.multiplier.hex}"></span>
+                    <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${bands.tolerance.hex}"></span>
+                    <span class="ml-1 text-[11px] font-mono font-medium text-slate-300">${formatOhms(resistorValue)}</span>
+                </div>
+            `;
+        }
+
+        function updateUI() {
+            const valInput = parseFloat(document.getElementById('targetValue').value);
+            const unitMult = parseFloat(document.getElementById('targetUnit').value);
+            const tolerance = parseInt(document.querySelector('input[name="tolerance"]:checked').value);
+            const resistorCount = parseInt(document.querySelector('input[name="resistorCount"]:checked').value);
+
+            if (isNaN(valInput) || valInput <= 0) {
+                showToast('Por favor, ingresa un valor válido de resistencia.');
+                return;
+            }
+
+            const targetOhms = valInput * unitMult;
+            const results = computeCombinations(targetOhms, tolerance, resistorCount);
+            currentCalculatedCombinations = results;
+
+            if (results.length === 0) return;
+
+            // Renderizar la mejor opción comercial encontrada
+            const best = results[0];
+            const diffText = (best.diffOhms >= 0 ? '+' : '') + formatOhms(best.diffOhms);
+
+            document.getElementById('bestFitResult').innerHTML = `
+                ${formatOhms(best.rTotal)} 
+                <span class="text-xs font-normal text-slate-400">(${best.type})</span>
+            `;
+            
+            document.getElementById('bestFitError').innerText = `${best.error.toFixed(2)}% (${diffText})`;
+
+            const badge = document.getElementById('errorBadge');
+            if (best.error < 1) {
+                badge.className = "w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50";
+            } else if (best.error < 5) {
+                badge.className = "w-3 h-3 rounded-full bg-yellow-500 shadow-lg shadow-yellow-500/50";
+            } else {
+                badge.className = "w-3 h-3 rounded-full bg-red-500 shadow-lg shadow-red-500/50";
+            }
+
+            // Renderizado de bandas para el componente principal
+            const primaryValForGraphic = best.resistors[0];
+            const bands = getResistorColorBands(primaryValForGraphic, tolerance);
+            
+            document.getElementById('resistorGraphicContainer').innerHTML = renderResistorSVG(bands);
+
+            document.getElementById('resistorDetailsBreakdown').innerHTML = `
+                <span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+                    B1: <strong style="color: ${bands.band1.hex === '#000000' ? '#9ca3af' : bands.band1.hex}">${bands.band1.name}</strong> (${bands.band1.val})
+                </span>
+                <span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+                    B2: <strong style="color: ${bands.band2.hex === '#000000' ? '#9ca3af' : bands.band2.hex}">${bands.band2.name}</strong> (${bands.band2.val})
+                </span>
+                <span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+                    Mult: <strong style="color: ${bands.multiplier.hex === '#000000' ? '#9ca3af' : bands.multiplier.hex}">${bands.multiplier.name}</strong> (x${bands.multiplier.mult})
+                </span>
+                <span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+                    Tol: <strong style="color: ${bands.tolerance.hex}">${bands.tolerance.name}</strong> (±${tolerance}%)
+                </span>
+            `;
+
+            // Renderizar Tabla
+            const tbody = document.getElementById('combinationsTableBody');
+            tbody.innerHTML = '';
+
+            document.getElementById('resultsCount').innerText = `${results.length} Opciones Comerciales`;
+
+            results.forEach((item, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40 transition-colors";
+
+                let typeBadgeClass = "bg-slate-800 text-slate-300";
+                if (item.type.includes('Serie')) typeBadgeClass = "bg-indigo-950/80 text-indigo-400 border border-indigo-800/50";
+                if (item.type.includes('Paralelo')) typeBadgeClass = "bg-teal-950/80 text-teal-400 border border-teal-800/50";
+                if (item.type.includes('Mixto')) typeBadgeClass = "bg-purple-950/80 text-purple-400 border border-purple-800/50";
+
+                const miniBandsHTML = item.resistors
+                    .map(r => renderMiniBands(r, tolerance))
+                    .join('<span class="text-slate-600 font-bold px-1">+</span>');
+
+                const itemDiffText = (item.diffOhms >= 0 ? '+' : '') + formatOhms(item.diffOhms);
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-medium whitespace-nowrap">
+                        <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold ${typeBadgeClass}">
+                            ${item.type}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="flex flex-wrap items-center gap-1">
+                            ${miniBandsHTML}
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 font-mono font-semibold text-emerald-400 whitespace-nowrap">
+                        ${formatOhms(item.rTotal)}
+                    </td>
+                    <td class="py-3 px-4 text-right font-mono font-medium whitespace-nowrap ${item.error < 1 ? 'text-emerald-400' : (item.error < 5 ? 'text-yellow-400' : 'text-red-400')}">
+                        ${item.error.toFixed(2)}% <span class="text-[10px] text-slate-500 font-normal">(${itemDiffText})</span>
+                    </td>
+                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                        <button 
+                            onclick="copyCombinationToClipboard(${idx})" 
+                            class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition"
+                            title="Copiar detalles"
+                        >
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ==========================================
+        // 5. INTERACCIONES & TOAST NOTIFICATIONS
+        // ==========================================
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        function copyCombinationToClipboard(index) {
+            const item = currentCalculatedCombinations[index];
+            if (!item) return;
+
+            const resListStr = item.resistors.map(r => formatOhms(r)).join(', ');
+            const diffText = (item.diffOhms >= 0 ? '+' : '') + formatOhms(item.diffOhms);
+            const textToCopy = `Configuración: ${item.type}\nResistores Comerciales: ${resListStr}\nResistencia Resultante: ${formatOhms(item.rTotal)}\nDiferencia/Error: ${item.error.toFixed(2)}% (${diffText})`;
+
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = textToCopy;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            showToast('¡Detalles copiados al portapapeles!');
+        }
+
+        // ==========================================
+        // 6. EVENT LISTENERS E INICIALIZACIÓN
+        // ==========================================
+
+        window.onload = function() {
+            document.getElementById('calculateBtn').addEventListener('click', updateUI);
+            document.getElementById('targetValue').addEventListener('input', updateUI);
+            document.getElementById('targetUnit').addEventListener('change', updateUI);
+            
+            document.querySelectorAll('input[name="tolerance"]').forEach(radio => {
+                radio.addEventListener('change', updateUI);
+            });
+
+            document.querySelectorAll('input[name="resistorCount"]').forEach(radio => {
+                radio.addEventListener('change', updateUI);
+            });
+
+            updateUI();
+        };
+    </script>
+</body>
+</html>
